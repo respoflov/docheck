@@ -176,12 +176,11 @@ body[data-theme="dark"] .ibtn .moon{display:block;}
   background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.18); padding:14px; z-index:31;}
 .popover h4{font-size:.85rem; font-weight:700; margin-bottom:4px;}
 .popover p{font-size:.75rem; color:var(--muted); line-height:1.5; margin-bottom:10px;}
-.fs-row{display:flex; align-items:center; gap:8px; margin-bottom:2px;}
+.fs-row{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
 .fs-row span{font-weight:700; color:var(--muted); flex:none;}
 .fs-row span.a{font-size:11px;}
 .fs-row span.b{font-size:17px;}
 .fs-row input[type="range"]{flex:1; accent-color:var(--accent); height:20px;}
-.fs-steps{display:flex; justify-content:space-between; font-size:9.5px; color:var(--muted); padding:0 2px; margin-bottom:12px;}
 .gbtn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:9px 0;
   border-radius:9px; border:1px solid var(--line); background:var(--bg); font-size:.8rem; font-weight:600; color:var(--ink);}
 .gbtn svg{width:13px; height:13px;}
