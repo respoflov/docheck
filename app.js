@@ -700,7 +700,14 @@ function renameListPrompt(){
 
 /* ---------- 오버플로 메뉴 ---------- */
 var moreBtn = document.getElementById("moreBtn"), menu = document.getElementById("menu");
-moreBtn.addEventListener("click", function(ev){ ev.stopPropagation(); menu.classList.toggle("open"); });
+moreBtn.addEventListener("click", function(ev){
+  ev.stopPropagation();
+  if(menu.classList.contains("open")){ menu.classList.remove("open"); return; }
+  var r = moreBtn.getBoundingClientRect();
+  menu.style.top = (r.bottom + 6) + "px";
+  menu.style.left = Math.max(10, r.right - 180) + "px";
+  menu.classList.add("open");
+});
 document.addEventListener("click", function(){ menu.classList.remove("open"); });
 document.getElementById("menuRename").addEventListener("click", function(){ menu.classList.remove("open"); renameListPrompt(); });
 document.getElementById("menuUncheckAll").addEventListener("click", function(){

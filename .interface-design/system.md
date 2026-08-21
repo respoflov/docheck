@@ -52,7 +52,7 @@
 - **필터 칩(완료 숨김/중요만)**: `.ctrl-row{justify-content:flex-end}`로 우측 정렬. 좌측 정렬이었던 첫 버전은 시각적으로 붕 떠 보인다는 피드백을 받아 변경.
 - **화면 전환 캐러셀(오늘/리스트별/전체)**: `.panels-viewport{overflow:clip}` 안에 `.panels-track{display:flex}`을 두고, 각 `.panel{flex:0 0 100%}`로 만든다. `translateX(-idx*100%)`만 쓰면 패널 개수가 몇 개든 반올림 오차 없이 정확히 들어맞는다(처음엔 `width:300%` + `33.3333%`로 만들었다가 소수점 자릿수가 안 맞아 경계에 다음 화면이 살짝 비치는 버그가 났다). `overflow`는 `hidden`이 아니라 `clip`을 써야 한다 — 아래 버그 기록 7번 참고.
 - **스와이프 삭제**: pointerdown/move/up으로 수평 드래그만 인식한다(첫 8px 이동으로 수평/수직 판정). -60px를 넘으면 삭제하고 4초 실행취소 스낵바를 띄운다. 화면 전환 스와이프와 겹치지 않도록, 화면 전환 쪽 pointerdown 핸들러는 `.item` 위에서 시작한 터치를 아예 무시한다.
-- **오버플로 메뉴**: `.card`(position:relative) 기준 `position:absolute; top:32px; right:-4px`로 띄운다. 반드시 트리거 버튼이 있는 컨테이너를 기준으로 위치시켜야 한다(화면 전체 기준으로 잡으면 엉뚱한 곳에 뜨는 버그를 실제로 겪었다).
+- **오버플로 메뉴**: `body`의 직속 자식으로 두고 `position:fixed`, 열 때 트리거 버튼(⋯)의 `getBoundingClientRect()`로 좌표를 계산해 띄운다. 처음엔 `.card` 안에 넣고 `.card` 기준 `position:absolute`로 띄웠는데, 카드에 `overflow:hidden`을 걸면서(스파인을 모서리 곡선에 맞게 잘라내려고) 메뉴가 카드 밖으로 못 나가고 잘리는 문제가 생겨 body 직속 + fixed 좌표 계산 방식으로 바꿨다. 날짜 팝오버(`#datePop`)도 같은 패턴.
 - **날짜 자동 갱신**: 앱을 켜둔 채 자정을 넘기면 헤더 날짜와 "오늘" 탭의 기한 지남/오늘 분류가 그 순간 자동으로 다시 계산된다(`scheduleMidnightTick` — 다음 자정에 맞춰 `setTimeout` 예약 + `visibilitychange`로 탭 복귀 시에도 한 번 더 확인).
 - **앱 아이콘**: 체크마크 하나만으로는 "체크리스트 앱"이라는 신호가 약해서, 실제 UI 체크박스와 같은 형태(둥근 사각형 아웃라인 + 안의 체크)로 바꿨다. 세 가지 안(크림 아웃라인 / 실제 UI 재현 / 얇은 로고형)을 28px 크기까지 비교해보고 아웃라인 안을 확정했다.
 
@@ -63,7 +63,8 @@
 4. `<input type="date">`는 CSS width를 강제로 줄여도 로케일 포맷 최소 폭 밑으로 줄어들지 않는다. 좁은 flex 행에 넣지 말고, 클릭하면 팝오버가 뜨는 커스텀 배지 버튼으로 대체할 것.
 5. `element.setPointerCapture()`는 해당 pointerId가 이미 종료된 뒤 호출되면 `NotFoundError`를 던진다. 스와이프 처리에서는 항상 `try/catch`로 감쌀 것.
 6. 캐러셀 폭을 `width:300%` + 자식 `width:33.3333%`처럼 분수로 계산하면 JS의 `translateX` 계산(부동소수점 전체 자릿수)과 CSS의 고정 소수점 자릿수가 어긋나 화면 경계에 다음 패널이 살짝 비친다. 자식을 `flex:0 0 100%`로 두고 `translateX(-idx*100%)`만 쓰면 이 문제 자체가 생기지 않는다.
-7. 캐러셀처럼 화면 밖(다른 패널)에 실제로 존재하는 input에 `.focus()`가 걸리면, 브라우저가 "포커스된 요소를 보여주려고" 가장 가까운 스크롤 가능한 조상의 `scrollLeft`를 임의로 바꿔버린다. `overflow:hidden`인 조상도 여기서 자유롭지 않다(스크롤바만 안 보일 뿐 `scrollLeft`는 여전히 프로그램적으로 바뀔 수 있다). 우리 캐러셀은 `translateX`로만 위치를 제어하는데 여기에 브라우저가 몰래 얹는 `scrollLeft`가 더해지면서 화면이 어긋났다. `overflow:hidden` 대신 `overflow:clip`(스크롤 자체를 봉쇄)을 쓰고, 혹시 몰라 `scroll` 이벤트에서 `scrollLeft`를 즉시 0으로 되돌리는 안전장치를 같이 둘 것.
+7. 4px처럼 아주 얇은 요소에 카드와 같은 큰 border-radius(16px)를 그대로 주면, 브라우저가 반지름을 요소 폭에 맞게 강제로 줄이면서(요소 폭보다 큰 반지름은 못 그리므로) 부모의 매끈한 모서리 곡선과 안 맞는 작은 돌기가 생긴다. 모든 탭에서 항상 보이는 정적인 문제였다. 얇은 장식 요소는 라운드를 아예 안 주고, 대신 모서리의 둥근 구간만큼(여기선 16px) 위아래를 inset해서 직선 구간에만 그리도록 고쳤다(`.card::before{top:16px;bottom:16px}`, attached 상태는 `top:0`).
+9. 캐러셀처럼 화면 밖(다른 패널)에 실제로 존재하는 input에 `.focus()`가 걸리면, 브라우저가 "포커스된 요소를 보여주려고" 가장 가까운 스크롤 가능한 조상의 `scrollLeft`를 임의로 바꿔버린다. `overflow:hidden`인 조상도 여기서 자유롭지 않다(스크롤바만 안 보일 뿐 `scrollLeft`는 여전히 프로그램적으로 바뀔 수 있다). 우리 캐러셀은 `translateX`로만 위치를 제어하는데 여기에 브라우저가 몰래 얹는 `scrollLeft`가 더해지면서 화면이 어긋났다. `overflow:hidden` 대신 `overflow:clip`(스크롤 자체를 봉쇄)을 쓰고, 혹시 몰라 `scroll` 이벤트에서 `scrollLeft`를 즉시 0으로 되돌리는 안전장치를 같이 둘 것.
 
 ## 참고한 외부 레퍼런스
 - linear.app, notion, cal.com (Claude/_references/awesome-design-md): 미니멀 유틸리티 톤 참고.

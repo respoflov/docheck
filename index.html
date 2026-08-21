@@ -69,13 +69,6 @@
             <div class="cardhead">
               <span class="cardtitle" id="listTitle"></span>
               <button class="morebtn" id="moreBtn"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
-              <div class="menu" id="menu">
-                <button id="menuRename">리스트 이름 변경</button>
-                <button id="menuUncheckAll">전체 해제</button>
-                <hr>
-                <button class="danger" id="menuClearDone">완료 항목 삭제</button>
-                <button class="danger" id="menuDeleteList">리스트 삭제</button>
-              </div>
             </div>
             <div class="gauge-row"><div class="gauge"><div id="listGaugeFill" style="width:0%"></div></div><span class="gauge-num" id="listGaugeNum">0/0</span></div>
             <div class="ctrl-row">
@@ -151,6 +144,14 @@
   <input type="date" id="datePopInput">
   <button id="datePopApply">적용</button>
   <button id="datePopClear">제거</button>
+</div>
+
+<div class="menu" id="menu">
+  <button id="menuRename">리스트 이름 변경</button>
+  <button id="menuUncheckAll">전체 해제</button>
+  <hr>
+  <button class="danger" id="menuClearDone">완료 항목 삭제</button>
+  <button class="danger" id="menuDeleteList">리스트 삭제</button>
 </div>
 
 <script type="module" src="app.js"></script>
