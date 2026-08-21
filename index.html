@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CHECK-CHECK</title>
+<title>Docheck</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4D6152">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="CHECK-CHECK">
+<meta name="apple-mobile-web-app-title" content="Docheck">
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="light">
@@ -20,7 +20,7 @@
   <div class="app-header">
     <div class="top-row">
       <div class="title-date">
-        <span class="wordmark-live">CHECK-<b>CHECK</b></span>
+        <span class="wordmark-live">Do<b>check</b></span>
         <span class="datetag" id="dateLabel"></span>
       </div>
       <div class="hbtns">
@@ -33,8 +33,8 @@
     </div>
     <div class="seg" id="seg">
       <button class="on" data-tab="today">오늘</button>
-      <button data-tab="all">전체</button>
       <button data-tab="lists">리스트별</button>
+      <button data-tab="all">전체</button>
     </div>
     <div class="tabs" id="tabs" style="display:none;"></div>
   </div>
@@ -61,21 +61,6 @@
           </div>
         </div>
         <div class="savebar" id="saveBarToday"></div>
-        <div class="footer">RESPOFLOV</div>
-      </div>
-
-      <!-- 전체 -->
-      <div class="panel" data-panel="all">
-        <div class="cardwrap">
-          <div class="card">
-            <div class="ctrl-row">
-              <button class="tglchip" id="hideDoneBtnAll"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.4"/></svg>완료 숨김</button>
-              <button class="tglchip" id="importantBtnAll"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</button>
-            </div>
-            <div id="allList"></div>
-          </div>
-        </div>
-        <div class="savebar" id="saveBarAll"></div>
         <div class="footer">RESPOFLOV</div>
       </div>
 
@@ -112,6 +97,21 @@
         <div class="footer">RESPOFLOV</div>
       </div>
 
+      <!-- 전체 -->
+      <div class="panel" data-panel="all">
+        <div class="cardwrap">
+          <div class="card">
+            <div class="ctrl-row">
+              <button class="tglchip" id="hideDoneBtnAll"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.4"/></svg>완료 숨김</button>
+              <button class="tglchip" id="importantBtnAll"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</button>
+            </div>
+            <div id="allList"></div>
+          </div>
+        </div>
+        <div class="savebar" id="saveBarAll"></div>
+        <div class="footer">RESPOFLOV</div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -145,7 +145,7 @@
     </div>
     <hr>
     <div class="verinfo">
-      <span class="v1">CHECK-CHECK · v<span id="appVersion"></span></span>
+      <span class="v1">Docheck · v<span id="appVersion"></span></span>
       <span class="v2">Firebase SDK 사용 (Apache License 2.0)</span>
     </div>
   </div>

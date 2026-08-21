@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHECK-CHECK 수정안 — 목업 v5</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Noto Sans KR",sans-serif;
+    background:#EAEAE6; color:#26282A; padding:32px 24px 90px;
+  }
+  h1{font-size:19px; font-weight:800; margin-bottom:6px;}
+  .tag{display:inline-block; font-size:11px; font-weight:700; color:#4D6152; background:#E4EAE5;
+    padding:3px 9px; border-radius:6px; margin-right:8px;}
+  .intro{font-size:13px; color:#5C5F5A; line-height:1.7; max-width:min(900px, 100%); margin-bottom:36px;}
+  section{max-width:1800px; margin:0 auto 56px; width:100%;}
+  h2{font-size:16px; font-weight:800; margin-bottom:4px;}
+  .sub{font-size:12.5px; color:#5C5F5A; margin-bottom:20px; line-height:1.6; max-width:820px;}
+
+  /* 아이콘 후보 */
+  .icon-row{display:flex; gap:24px; flex-wrap:wrap;}
+  .icon-card{width:220px; background:#fff; border:1px solid #D8D8D2; border-radius:16px; overflow:hidden;}
+  .icon-card img.big{width:100%; display:block;}
+  .icon-card .meta{padding:12px 14px 16px;}
+  .icon-card .name{font-size:13px; font-weight:700; margin-bottom:4px;}
+  .icon-card .desc{font-size:11.5px; color:#5C5F5A; line-height:1.55; margin-bottom:10px;}
+  .icon-card .small-row{display:flex; align-items:center; gap:8px;}
+  .icon-card .small-row img{width:28px; height:28px; border-radius:7px;}
+  .icon-card .small-row span{font-size:10.5px; color:#8B8E88;}
+  .pick{border-color:#4D6152; box-shadow:0 0 0 2px #4D6152 inset;}
+  .pick-badge{display:inline-block; font-size:10px; font-weight:800; color:#fff; background:#4D6152;
+    padding:2px 8px; border-radius:20px; margin-bottom:6px;}
+
+  /* 이름 후보 */
+  .name-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;}
+  .name-card{background:#fff; border:1px solid #D8D8D2; border-radius:14px; padding:18px 18px 16px;}
+  .name-card .wm{font-size:22px; font-weight:800; letter-spacing:-.015em; color:#262B27; margin-bottom:10px;}
+  .name-card .wm b{color:#4D6152;}
+  .name-card .verdict{font-size:12px; line-height:1.6; color:#4B4E48;}
+  .name-card .verdict b{color:#262B27;}
+  .name-card .good{color:#2F6E4C;}
+  .name-card .bad{color:#9A4530;}
+
+  /* 폰 프레임 */
+  .row{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start;}
+  .unit{display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .unit .cap{font-size:12px; color:#5C5F5A; font-weight:600; text-align:center; max-width:375px; line-height:1.5;}
+  .frame{width:375px; height:812px; border:9px solid #1C1C1C; border-radius:48px; overflow:hidden; position:relative; background:#000;}
+  .notch{position:absolute; top:9px; left:50%; transform:translateX(-50%); width:120px; height:22px; background:#1C1C1C; border-radius:0 0 14px 14px; z-index:5;}
+  .screen{width:100%; height:100%; overflow:hidden; display:flex; flex-direction:column; position:relative;
+    background:#F0F2EE; color:#262B27;}
+  .status{height:44px; flex:none; display:flex; align-items:flex-end; padding:0 22px 6px; font-size:12px; font-weight:600;}
+  .app-header{flex:none; padding:0 18px 12px;}
+  .wordmark-live{font-size:16.5px; font-weight:800; letter-spacing:-.015em;}
+  .wordmark-live b{color:#4D6152;}
+  .seg{display:flex; gap:3px; background:#E4EAE5; padding:3px; border-radius:10px; margin-top:10px;}
+  .seg span{flex:1; text-align:center; padding:7px 0; border-radius:8px; font-size:12.5px; color:#7C877E; font-weight:600;}
+  .seg span.on{background:#fff; color:#262B27;}
+
+  /* BEFORE: 강제로 꽉 채우는 카드 */
+  .cardwrap-before{flex:1; overflow:hidden; padding:0 14px 14px; display:flex; flex-direction:column;}
+  .card-before{flex:1; background:#fff; border:1px solid #D7DED6; border-radius:16px; padding:14px 16px 12px 20px; position:relative;}
+  .card-before::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#4D6152;border-radius:16px 0 0 16px;opacity:.85;}
+  .empty-before{color:#7C877E; text-align:center; padding:60px 10px; font-size:13px; line-height:1.7;}
+
+  /* AFTER: 내용만큼만 차지 */
+  .cardwrap-after{padding:0 14px; display:flex; flex-direction:column;}
+  .card-after{background:#fff; border:1px solid #D7DED6; border-radius:16px; padding:14px 16px 18px 20px; position:relative; min-height:150px;}
+  .card-after::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#4D6152;border-radius:16px 0 0 16px;opacity:.85;}
+  .empty-after{text-align:center; padding:20px 14px 6px;}
+  .empty-after svg{width:52px;height:52px;margin-bottom:10px;opacity:.5;}
+  .empty-after .t1{font-size:13px; font-weight:700; color:#262B27; margin-bottom:4px;}
+  .empty-after .t2{font-size:12px; color:#7C877E; line-height:1.5;}
+  .after-belowspace{flex:1; display:flex; align-items:flex-end; justify-content:center; padding-bottom:20px;}
+  .after-belowspace span{font-size:11px; color:#B7BEB4;}
+</style>
+</head>
+<body>
+
+<h1>CHECK-CHECK 수정 요청 반영안 — 목업 v5</h1>
+<p class="intro">
+  <span class="tag">v5 · 로고 · 이름 · 레이아웃 재검토</span>
+  실제 코드에 반영하기 전 검토용 목업입니다. 아이콘 3안, 이름 후보(자문), 꽉 찬 빈 카드 문제의 개선안을 담았습니다.
+  아이콘/이름은 결정 주시면 바로 실구현에 반영하고, 레이아웃 개선은 이 방향이 맞다면 그대로 코드에 옮기겠습니다.
+</p>
+
+<section>
+  <h2>1. 아이콘 — 네모(체크박스) 안을 체크하는 형태</h2>
+  <p class="sub">기존엔 체크마크 하나만 떠 있어서 "체크리스트 앱"이라는 신호가 약했습니다. 세 가지 안 모두 배경은 기존 세이지그린을 유지하고, 앱 안의 실제 체크 아이콘과 같은 잉크 서명 체크(펜으로 긋는 듯한 모양)를 그대로 씁니다. 작은 크기(28px, 홈 화면 아이콘 실사용 크기에 가깝게)에서의 가독성도 같이 확인해주세요.</p>
+  <div class="icon-row">
+    <div class="icon-card pick">
+      <span></span>
+      <img class="big" src="assets-v5/icon-cand-b.png">
+      <div class="meta">
+        <div class="pick-badge">추천</div>
+        <div class="name">B안 · 실제 체크박스 재현</div>
+        <div class="desc">앱 안에서 항목을 체크할 때 쓰는 진짜 컴포넌트(연한 배경 + 진한 체크)를 그대로 아이콘으로 옮겼습니다. 면적이 넓어서 작은 크기에서 가장 또렷하게 보입니다.</div>
+        <div class="small-row"><img src="assets-v5/icon-cand-b.png"><span>28px에서도 체크박스 형태가 살아있음</span></div>
+      </div>
+    </div>
+    <div class="icon-card">
+      <img class="big" src="assets-v5/icon-cand-a.png">
+      <div class="meta">
+        <div class="name">A안 · 크림색 아웃라인</div>
+        <div class="desc">체크박스를 테두리 선으로만 그려서 좀 더 담백하고 종이 도장 느낌에 가깝습니다. 작은 크기에서는 B안보다 살짝 약하게 보입니다.</div>
+        <div class="small-row"><img src="assets-v5/icon-cand-a.png"><span>선이 가늘어 작게 보면 흐릿함</span></div>
+      </div>
+    </div>
+    <div class="icon-card">
+      <img class="big" src="assets-v5/icon-cand-c.png">
+      <div class="meta">
+        <div class="name">C안 · 얇은 로고형</div>
+        <div class="desc">박스를 작고 여백을 넉넉하게 둬서 더 고급스럽지만, 그만큼 작은 크기에서는 형태가 잘 안 보입니다.</div>
+        <div class="small-row"><img src="assets-v5/icon-cand-c.png"><span>28px에서 거의 초록 사각형으로만 보임</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>2. 이름 — Claude 자문 (의도 반영 없이 순수 의견)</h2>
+  <p class="sub">
+    "Check-ish"는 짧고 캐주얼해서 어감은 좋지만, 하나 걸리는 게 있습니다. "-ish"는 영어에서 "대충", "얼추"라는 뜻이라 <b>"체크했다고 치자" 같은 애매함</b>을 풍깁니다. 체크리스트 앱이 파는 가치는 정반대로 "했다/안 했다"의 확실함이라서, 이름과 앱의 핵심 가치가 미묘하게 어긋날 수 있습니다.
+    반대로 지금의 "CHECK-CHECK"는 무전·마이크 테스트에서 쓰는 "check, check" 확인 관용구와 겹쳐서 나름 의미가 있긴 합니다만, 말씀하신 대로 소리 내어 부르기엔 길고 임팩트가 약한 것도 사실입니다. 아래 대안들을 참고해주세요.
+  </p>
+  <div class="name-grid">
+    <div class="name-card">
+      <div class="wm">CHECK-<b>CHECK</b></div>
+      <div class="verdict"><b>지금 이름.</b> 마이크체크 관용구와 겹쳐 나름 의미는 있지만, 부르기엔 <span class="bad">길고 임팩트 약함</span>. 말씀하신 문제의식에 동의합니다.</div>
+    </div>
+    <div class="name-card">
+      <div class="wm">Check<b>-ish</b></div>
+      <div class="verdict">짧고 <span class="good">캐주얼함</span>. 다만 "-ish"가 애매함을 뜻해서 <span class="bad">"확실히 끝냄"이라는 앱의 핵심 가치와 살짝 어긋남</span>.</div>
+    </div>
+    <div class="name-card">
+      <div class="wm">Check<b>mate</b></div>
+      <div class="verdict">체스 외통수(=완전히 끝냄) 어감이 <span class="good">"완료"와 잘 맞고 짧고 임팩트 있음</span>. 다만 이미 여러 분야에서 흔히 쓰인 이름이라 <span class="bad">고유함은 약함</span>.</div>
+    </div>
+    <div class="name-card">
+      <div class="wm">Do<b>check</b></div>
+      <div class="verdict">"to-do"와 "check"를 붙인 조어. <span class="good">짧고, 발음 쉽고, 겹치는 이름이 적을 것으로 보임</span>. 다만 흔한 조어 방식이라 <span class="bad">신선함은 덜함</span>.</div>
+    </div>
+    <div class="name-card">
+      <div class="wm">Check<b>flow</b></div>
+      <div class="verdict">이번에 넣은 스와이프 전환·부드러운 화면 흐름과 <span class="good">의미가 실제로 맞아떨어짐</span>. 다만 <span class="bad">SaaS 툴 느낌이 강해 개인 앱치곤 다소 사무적</span>.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>3. 빈 카드가 꽉 차 보이는 문제</h2>
+  <p class="sub">
+    지금은 카드가 화면 남는 공간을 항상 100% 채우도록 되어 있어서, 항목이 적을 때 흰 카드 안에 거대한 빈 공간이 남습니다. 초록 스파인만 아래로 길게 뻗어 있고 그 아래는 텅 비어 있는 게, 내용에 맞춰 다듬어지지 않은 "기계적으로 채운" 느낌을 줍니다.
+    개선안은 <b>카드를 내용 크기만큼만 차지하게 하고</b>, 남는 공간은 카드 밖 배경색으로 조용히 비워둡니다. 빈 상태 문구도 작은 체크박스 그림을 곁들여 자리 하나만큼은 의도적으로 채웠습니다.
+  </p>
+  <div class="row">
+    <div class="unit">
+      <div class="frame"><div class="notch"></div>
+        <div class="screen">
+          <div class="status"><span>9:41</span></div>
+          <div class="app-header">
+            <div class="wordmark-live">CHECK-<b>CHECK</b></div>
+            <div class="seg"><span class="on">오늘</span><span>리스트별</span><span>전체</span></div>
+          </div>
+          <div class="cardwrap-before">
+            <div class="card-before">
+              <div class="empty-before">오늘 마감인 항목이 없습니다.<br>여유로운 하루예요.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">지금 (Before) — 카드가 강제로 꽉 차서 아래가 텅 빈 채로 남음</div>
+    </div>
+
+    <div class="unit">
+      <div class="frame"><div class="notch"></div>
+        <div class="screen">
+          <div class="status"><span>9:41</span></div>
+          <div class="app-header">
+            <div class="wordmark-live">CHECK-<b>CHECK</b></div>
+            <div class="seg"><span class="on">오늘</span><span>리스트별</span><span>전체</span></div>
+          </div>
+          <div class="cardwrap-after">
+            <div class="card-after">
+              <div class="empty-after">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#B7BEB4" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="5"/><path d="M8 12.5l2.5 2.5L16 9" stroke-width="2"/></svg>
+                <div class="t1">오늘 마감인 항목이 없어요</div>
+                <div class="t2">여유로운 하루예요.</div>
+              </div>
+            </div>
+            <div class="after-belowspace"><span>RESPOFLOV</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">개선안 (After) — 카드는 내용만큼만, 남는 공간은 배경으로 조용히 비움</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

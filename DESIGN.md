@@ -1,4 +1,4 @@
-# CHECK-CHECK 디자인 문서
+# Docheck 디자인 문서
 
 01_checklist을 전면 개조한 앱. 원본은 GitHub_PWA/01_checklist에 그대로 남아 있고, 이 앱은 독립된 새 앱(10_todays-check)이다.
 
@@ -33,7 +33,7 @@
 
 ## 이름
 
-CHECK-CHECK로 확정(최초 후보는 TODAY'S CHECK였다가 저장소 이름에 맞춰 변경). 로고마크는 01_checklist의 잉크 서명 체크(펜으로 긋는 듯한 체크마크)를 그대로 계승한 아이콘.
+**Docheck**로 확정. 최초 후보는 TODAY'S CHECK, 저장소 이름에 맞춰 CHECK-CHECK로 바뀌었다가, "부르기엔 길고 임팩트가 약하다"는 피드백으로 다시 검토해 Docheck로 정착했다(자문 후보 중 하나였던 Checkmate·Checkflow 대신 선택). 로고마크는 01_checklist의 잉크 서명 체크를 계승하되, 체크박스(네모 안을 체크하는 형태)로 한 단계 더 구체화했다.
 
 ## 진행 기록
 

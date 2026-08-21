@@ -4,7 +4,7 @@ import { isConfigured as firebaseConfigured, signIn, signOutUser, watchAuth, pul
 "use strict";
 
 var APP_VERSION = "1.0.0";
-var STORAGE_KEY = "check-check-v1";
+var STORAGE_KEY = "docheck-v1";
 var CHECK_PATH = "M5 12.5l4.5 4.5L19 7";
 var STAR_PATH = "M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z";
 var FS_STEPS = [13,14,15,16,17];
@@ -382,6 +382,26 @@ document.addEventListener("click", function(ev){
   }
 });
 
+/* ---------- 빈 상태(체크박스 아이콘 + 제목 + 설명) ---------- */
+function buildEmpty(title, subtitle){
+  var svgNS = "http://www.w3.org/2000/svg";
+  var em = el("div","empty");
+  var svg = document.createElementNS(svgNS,"svg");
+  svg.setAttribute("viewBox","0 0 24 24");
+  var rect = document.createElementNS(svgNS,"rect");
+  rect.setAttribute("x","4"); rect.setAttribute("y","4"); rect.setAttribute("width","16"); rect.setAttribute("height","16"); rect.setAttribute("rx","5");
+  rect.setAttribute("fill","none"); rect.setAttribute("stroke","currentColor"); rect.setAttribute("stroke-width","1.6");
+  var path = document.createElementNS(svgNS,"path");
+  path.setAttribute("d","M8 12.5l2.5 2.5L16 9");
+  path.setAttribute("fill","none"); path.setAttribute("stroke","currentColor");
+  path.setAttribute("stroke-width","2"); path.setAttribute("stroke-linecap","round"); path.setAttribute("stroke-linejoin","round");
+  svg.appendChild(rect); svg.appendChild(path);
+  em.appendChild(svg);
+  em.appendChild(el("div","t1", title));
+  if(subtitle) em.appendChild(el("div","t2", subtitle));
+  return em;
+}
+
 /* ---------- 렌더: 전체 ---------- */
 function renderAllTab(){
   var host = document.getElementById("allList");
@@ -396,9 +416,7 @@ function renderAllTab(){
     items.forEach(function(item){ host.appendChild(buildItemRow(item, list, { crossList:true })); });
   });
   if(!any){
-    var em = el("div","empty");
-    em.innerHTML = "표시할 항목이 없습니다.<br>필터를 확인하거나 <b>리스트별</b> 탭에서 항목을 추가해 보세요.";
-    host.appendChild(em);
+    host.appendChild(buildEmpty("표시할 항목이 없어요", "필터를 확인하거나 리스트별 탭에서 항목을 추가해 보세요."));
   }
   document.getElementById("hideDoneBtnAll").classList.toggle("on", state.hideCompleted);
   document.getElementById("importantBtnAll").classList.toggle("on", state.importantOnly);
@@ -436,9 +454,9 @@ function renderTodayTab(){
     todays.forEach(function(p){ host.appendChild(buildItemRow(p.item, p.list, { crossList:true })); });
   }
   if(!overdue.length && !todays.length){
-    var em = el("div","empty");
-    em.innerHTML = totalDue ? "필터에 걸리는 항목이 없습니다." : "오늘 마감인 항목이 없습니다.<br>여유로운 하루예요.";
-    host.appendChild(em);
+    host.appendChild(totalDue
+      ? buildEmpty("필터에 걸리는 항목이 없어요")
+      : buildEmpty("오늘 마감인 항목이 없어요", "여유로운 하루예요."));
   }
   document.getElementById("hideDoneBtnToday").classList.toggle("on", state.hideCompleted);
   document.getElementById("importantBtnToday").classList.toggle("on", state.importantOnly);
@@ -470,9 +488,9 @@ function renderListsTab(){
   host.innerHTML = "";
   var items = sorted(visible(list.items));
   if(items.length === 0){
-    var em = el("div","empty");
-    em.innerHTML = list.items.length ? "필터에 걸리는 항목이 없습니다." : "아직 항목이 없습니다.<br>위 입력창에 <b>첫 할 일</b>을 추가해 보세요.";
-    host.appendChild(em);
+    host.appendChild(list.items.length
+      ? buildEmpty("필터에 걸리는 항목이 없어요")
+      : buildEmpty("아직 항목이 없어요", "위 입력창에 첫 할 일을 추가해 보세요."));
   } else {
     items.forEach(function(item){ host.appendChild(buildItemRow(item, list, { crossList:false })); });
   }
@@ -533,7 +551,7 @@ document.getElementById("themeBtn").addEventListener("click", function(){
 });
 
 /* ---------- 세그먼트 탭 (스와이프로도 전환되는 캐러셀) ---------- */
-var PANEL_ORDER = ["today","all","lists"];
+var PANEL_ORDER = ["today","lists","all"];
 var panelIndex = 0;
 var track = document.getElementById("panelsTrack");
 var viewport = document.getElementById("panelsViewport");
@@ -550,6 +568,11 @@ document.getElementById("seg").addEventListener("click", function(ev){
   var btn = ev.target.closest("button"); if(!btn) return;
   goToPanel(PANEL_ORDER.indexOf(btn.dataset.tab), true);
 });
+
+/* 다른 패널(화면 밖) 안의 input에 focus()가 걸리면 브라우저가 임의로
+   panelsViewport를 스크롤시켜 그 input을 보여주려 하면서 캐러셀 위치가 어긋나는
+   경우가 있다. overflow:clip으로 대부분 막히지만, 혹시 몰라 즉시 되돌리는 안전장치. */
+viewport.addEventListener("scroll", function(){ if(viewport.scrollLeft !== 0) viewport.scrollLeft = 0; });
 
 var panelSwipe = null;
 viewport.addEventListener("pointerdown", function(ev){
@@ -809,6 +832,26 @@ if(firebaseConfigured){
   setSyncUiSignedOut();
 }
 
+/* ---------- 날짜 자동 갱신 ----------
+   앱을 켜둔 채 자정을 넘기면(또는 노트북이 잠들었다 깨어나면), 헤더 날짜와
+   "오늘" 탭의 기한 지남/오늘 분류·게이지가 그 순간 자동으로 다시 계산된다.
+   재렌더 없이는 날짜가 바뀌어도 화면이 그대로 멈춰 있기 때문에 필요하다. */
+var lastKnownDate = null;
+function checkDateRollover(){
+  var t = todayStr();
+  if(lastKnownDate !== null && t !== lastKnownDate){
+    renderHeader();
+    renderAll();
+  }
+  lastKnownDate = t;
+}
+function scheduleMidnightTick(){
+  var now = new Date();
+  var next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 3);
+  setTimeout(function(){ checkDateRollover(); scheduleMidnightTick(); }, next - now);
+}
+document.addEventListener("visibilitychange", function(){ if(!document.hidden) checkDateRollover(); });
+
 /* ---------- 시작 ---------- */
 load();
 applyTheme();
@@ -817,5 +860,7 @@ document.getElementById("fsSlider").value = state.fontStep||2;
 renderHeader();
 renderAll();
 save();
+lastKnownDate = todayStr();
+scheduleMidnightTick();
 
 })();

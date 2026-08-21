@@ -52,10 +52,12 @@ body[data-theme="dark"] .ibtn .moon{display:block;}
   background:var(--surface); border:1.5px solid var(--accent); border-radius:9px 9px 0 0; position:relative; z-index:2;}
 .tabs .tab-input input{width:100%; border:none; background:transparent; font-size:inherit; color:inherit; outline:none;}
 
-.cardwrap{flex:1; overflow:hidden; padding:0 14px 0; display:flex; flex-direction:column; min-height:0;}
+/* 카드는 내용 크기만큼만 차지한다. cardwrap이 남는 세로 공간을 흡수하고(스크롤도 여기서),
+   카드 아래 남는 자리는 배경색으로 조용히 비워둔다(예전엔 카드가 항상 꽉 채워서 빈 흰 공간이 남았음). */
+.cardwrap{flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:0 14px 14px; min-height:0;}
 .cardwrap.attached{margin-top:-1px;}
-.card{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--surface); border:1px solid var(--line); border-radius:16px;
-  box-shadow:var(--card-shadow); padding:14px 16px 12px 20px; position:relative;}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:16px; min-height:160px;
+  box-shadow:var(--card-shadow); padding:14px 16px 18px 20px; position:relative;}
 .cardwrap.attached .card{border-radius:0 16px 16px 16px;}
 .card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent);
   border-radius:16px 0 0 16px; opacity:.85;}
@@ -74,7 +76,7 @@ body[data-theme="dark"] .ibtn .moon{display:block;}
 .gauge > div{height:100%; background:var(--accent); border-radius:3px; transition:width .3s ease;}
 .gauge-num{font-size:.8rem; color:var(--muted); font-family:ui-monospace,"SF Mono",Consolas,monospace; flex:none;}
 
-.ctrl-row{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;}
+.ctrl-row{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; justify-content:flex-end;}
 .tglchip{display:flex; align-items:center; gap:5px; font-size:.8rem; padding:6px 11px; border-radius:20px;
   border:1px solid var(--line); color:var(--muted); font-weight:600;}
 .tglchip svg{width:12px; height:12px;}
@@ -146,15 +148,17 @@ body[data-theme="dark"] .ibtn .moon{display:block;}
 .subadd .plus{width:15px; height:15px; border-radius:4px; border:1.3px dashed var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; flex:none;}
 .subadd-input{flex:1; font-size:.8rem; border:none; border-bottom:1px solid var(--accent); background:transparent; margin:4px 0 2px 21px; display:block; width:calc(100% - 21px);}
 
-.empty{color:var(--muted); text-align:center; padding:44px 10px; font-size:.85rem; line-height:1.7;}
+.empty{color:var(--muted); text-align:center; padding:22px 14px 8px; font-size:.85rem; line-height:1.6;}
 .empty b{color:var(--ink);}
+.empty svg{width:40px; height:40px; margin-bottom:10px; opacity:.4;}
+.empty .t1{font-weight:700; color:var(--ink); font-size:.92rem; margin-bottom:3px;}
 
 .savebar{flex:none; display:flex; align-items:center; justify-content:flex-end; padding:8px 22px 2px; font-size:.75rem; color:var(--muted); min-height:22px;}
 .savebar.warn{color:var(--danger-ink);}
 .footer{flex:none; text-align:center; font-size:9.5px; font-weight:600; letter-spacing:.32em; text-indent:.32em;
   color:var(--muted); opacity:.55; padding:8px 0 max(env(safe-area-inset-bottom, 12px), 12px);}
 
-.panels-viewport{flex:1; overflow:hidden; position:relative; min-height:0; touch-action:pan-y;}
+.panels-viewport{flex:1; overflow:clip; position:relative; min-height:0; touch-action:pan-y;}
 .panels-track{display:flex; width:100%; height:100%; will-change:transform;}
 .panel{flex:0 0 100%; width:100%; display:flex; flex-direction:column; min-height:0;}
 

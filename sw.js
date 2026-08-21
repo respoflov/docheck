@@ -1,5 +1,5 @@
-/* CHECK-CHECK PWA 서비스 워커. 오프라인 실행을 지원한다. */
-var CACHE = "check-check-v1"; /* 앱을 수정해 다시 올릴 때 v2, v3...으로 숫자를 올려주세요 */
+/* Docheck PWA 서비스 워커. 오프라인 실행을 지원한다. */
+var CACHE = "docheck-v1"; /* 앱을 수정해 다시 올릴 때 v2, v3...으로 숫자를 올려주세요 */
 var ASSETS = [
   "./",
   "./index.html",
