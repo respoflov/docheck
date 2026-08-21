@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TODAY'S CHECK — 실제 크기 프리뷰 (v4)</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{font-size:15px;} /* 글자 크기 슬라이더가 이 값을 바꿉니다 — 아래 모든 rem이 함께 움직여요 */
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Noto Sans KR",sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden;
+  }
+  button{font:inherit; color:inherit; background:none; border:none; cursor:pointer;}
+  input{font:inherit; color:inherit;}
+
+  body{
+    --bg:#F0F2EE; --surface:#FFFFFF; --ink:#262B27; --muted:#616C64; --line:#D7DED6;
+    --accent:#4D6152; --accent-soft:#E4EAE5; --danger:#B0503C; --danger-ink:#9A4530; --danger-soft:#F6E8E3;
+    --today:#A97B2F; --today-ink:#8C6323; --today-soft:#F3EBD9; --pill:#EDEFEA; --card-shadow:0 1px 3px rgba(38,43,39,.10);
+  }
+  body[data-theme="dark"]{
+    --bg:#17181A; --surface:#212327; --ink:#E7E7E4; --muted:#8A8D93; --line:#33353A;
+    --accent:#C9CBCE; --accent-soft:#3A3D42; --danger:#D98B74; --danger-ink:#D98B74; --danger-soft:#3A2420;
+    --today:#D6A957; --today-ink:#D6A957; --today-soft:#3A2F1C; --pill:#26282C; --card-shadow:none;
+  }
+
+  .app{height:100%; display:flex; flex-direction:column;}
+  .app-header{flex:none; padding:14px 18px 0;}
+  .top-row{display:flex; align-items:center; justify-content:space-between; padding:2px 0 12px;}
+  .title-date{display:flex; align-items:baseline; gap:8px; min-width:0;}
+  .wordmark-live{font-size:17px; font-weight:800; letter-spacing:-.015em; white-space:nowrap;}
+  .wordmark-live b{color:var(--accent); font-weight:800;}
+  .datetag{font-size:.8rem; color:var(--muted); font-family:ui-monospace,"SF Mono",Consolas,monospace; white-space:nowrap;}
+  .hbtns{display:flex; gap:6px; flex:none;}
+  .ibtn{width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; color:var(--muted); flex:none; position:relative;}
+  .ibtn svg{width:16px; height:16px;}
+  .ibtn path,.ibtn circle{fill:none; stroke:currentColor; stroke-width:1.6; stroke-linejoin:round; stroke-linecap:round;}
+  .ibtn .moon{display:none;}
+  body[data-theme="dark"] .ibtn .sun{display:none;}
+  body[data-theme="dark"] .ibtn .moon{display:block;}
+
+  .seg{display:flex; gap:3px; background:var(--accent-soft); padding:3px; border-radius:10px; margin-bottom:14px;}
+  .seg button{flex:1; text-align:center; padding:8px 0; border-radius:8px; font-size:.8rem; color:var(--muted); font-weight:600;}
+  .seg button.on{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08);}
+
+  .tabs{display:flex; gap:3px; overflow-x:auto; padding:0 2px; align-items:center;}
+  .tabs button{flex:none; padding:8px 14px; font-size:.8rem; color:var(--muted); font-weight:600;
+    border-radius:9px 9px 0 0; white-space:nowrap; background:var(--accent-soft);}
+  .tabs button.on{background:var(--surface); color:var(--accent); position:relative; z-index:2;}
+  .tabs button.add{color:var(--accent); font-weight:800; background:transparent; padding:8px 10px;}
+  .tabs .tab-input{flex:none; width:112px; padding:7px 10px; font-size:.8rem; font-weight:600; color:var(--ink);
+    background:var(--surface); border:1.5px solid var(--accent); border-radius:9px 9px 0 0; position:relative; z-index:2;}
+
+  .cardwrap{flex:1; overflow:hidden; padding:0 14px 0; display:flex; flex-direction:column; min-height:0;}
+  .cardwrap.attached{margin-top:-1px;}
+  .card{flex:1; overflow-y:auto; background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--card-shadow); padding:14px 16px 12px 20px; position:relative;}
+  .cardwrap.attached .card{border-radius:0 16px 16px 16px;}
+  .card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent);
+    border-radius:16px 0 0 16px; opacity:.85;}
+  .cardwrap.attached .card::before{border-radius:0 0 0 16px;}
+
+  .cardhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;}
+  .cardtitle{font-size:1rem; font-weight:700;}
+  .morebtn{width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); flex:none; position:relative;}
+  .morebtn svg{width:16px; height:16px;}
+  .morebtn circle{fill:currentColor; stroke:none;}
+
+  .gauge-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .gauge{flex:1; height:4px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .gauge > div{height:100%; background:var(--accent); border-radius:3px; transition:width .3s ease;}
+  .gauge-num{font-size:.8rem; color:var(--muted); font-family:ui-monospace,"SF Mono",Consolas,monospace; flex:none;}
+
+  .ctrl-row{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;}
+  .tglchip{display:flex; align-items:center; gap:5px; font-size:.8rem; padding:6px 11px; border-radius:20px;
+    border:1px solid var(--line); color:var(--muted); font-weight:600;}
+  .tglchip svg{width:12px; height:12px;}
+  .tglchip path,.tglchip circle{fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+  .tglchip.on{background:var(--accent); border-color:var(--accent); color:var(--bg);}
+  .tglchip.on path{stroke:var(--bg);}
+
+  .addrow{display:flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--line);
+    border-radius:11px; padding:10px 10px; margin-bottom:10px;}
+  .addrow .star{width:18px; height:18px;}
+  .addrow input{flex:1; border:none; background:transparent; font-size:.93rem; color:var(--ink); min-width:0;}
+  .addrow .datepill{font-size:.8rem; color:var(--muted); flex:none;}
+  .addrow .addbtn{flex:none; width:27px; height:27px; border-radius:8px; background:var(--accent); color:var(--bg);
+    display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;}
+
+  .grouplabel{font-size:.72rem; font-weight:700; color:var(--muted); letter-spacing:.06em; margin:12px 0 5px; text-transform:uppercase;}
+  .grouplabel:first-child{margin-top:0;}
+  .grouplabel.warn{color:var(--danger-ink);}
+  .grouplabel.now{color:var(--today-ink);}
+
+  .item{display:flex; align-items:flex-start; gap:9px; padding:10px 0; border-top:1px solid var(--pill);}
+  .item:first-child{border-top:none;}
+  .star{width:17px; height:17px; flex:none; margin-top:3px; color:var(--line); position:relative; cursor:pointer;}
+  .star::after{content:"";position:absolute;inset:-9px;}
+  .star.on{color:var(--today);}
+  .star svg{width:100%; height:100%;}
+  .star path{fill:none; stroke:currentColor; stroke-width:1.6; stroke-linejoin:round;}
+  .star.on path{fill:currentColor;}
+  .chk{width:21px; height:21px; border-radius:6px; border:1.6px solid var(--muted); flex:none; margin-top:2px;
+    display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer;}
+  .chk::after{content:"";position:absolute;inset:-7px;}
+  .chk.on{border-color:var(--accent); background:var(--accent-soft);}
+  .chk svg{width:13px; height:13px; opacity:0;}
+  .chk.on svg{opacity:1;}
+  .chk path{fill:none; stroke:var(--accent); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+  .txtwrap{flex:1; min-width:0;}
+  .txt{font-size:.93rem; line-height:1.45;}
+  .item.done .txt{color:var(--muted); text-decoration:line-through;}
+  .subrow{font-size:.75rem; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:4px; cursor:pointer; width:fit-content;}
+  .subrow svg{width:10px; height:10px; transition:transform .15s ease;}
+  .subrow path{fill:none; stroke:currentColor; stroke-width:2;}
+  .subrow.open svg{transform:rotate(180deg);}
+  .due{flex:none; font-size:.75rem; padding:3px 7px; border-radius:6px; background:var(--bg); color:var(--muted);
+    border:1px solid var(--line); margin-top:2px; white-space:nowrap;}
+  .due.today{background:var(--today-soft); color:var(--today-ink); border-color:transparent; font-weight:700;}
+  .due.overdue{background:var(--danger-soft); color:var(--danger-ink); border-color:transparent; font-weight:700;}
+  .listpill{flex:none; font-size:.72rem; padding:3px 6px; border-radius:5px; background:var(--pill); color:var(--muted); margin-top:2px; font-weight:600;}
+
+  .sub-list{margin:8px 0 2px 27px; border-left:2px solid var(--pill); padding-left:11px; display:none;}
+  .sub-list.open{display:block;}
+  .sub-item{display:flex; align-items:center; gap:8px; padding:5px 0; font-size:.85rem;}
+  .sub-item .chk{width:16px; height:16px; border-radius:4px;}
+  .sub-item .chk::after{inset:-9px;}
+  .sub-item .chk svg{width:10px; height:10px;}
+  .sub-item.done{color:var(--muted); text-decoration:line-through;}
+  .subadd{display:flex; align-items:center; gap:6px; padding:6px 0 2px; font-size:.8rem; color:var(--muted); font-weight:600; cursor:pointer;}
+  .subadd .plus{width:15px; height:15px; border-radius:4px; border:1.3px dashed var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; flex:none;}
+
+  .savebar{flex:none; display:flex; align-items:center; justify-content:flex-end; padding:8px 22px 2px; font-size:.75rem; color:var(--muted);}
+  .footer{flex:none; text-align:center; font-size:9.5px; font-weight:600; letter-spacing:.32em; text-indent:.32em;
+    color:var(--muted); opacity:.55; padding:8px 0 max(env(safe-area-inset-bottom, 12px), 12px);}
+
+  .panel{display:none; flex:1; min-height:0; flex-direction:column;}
+  .panel.on{display:flex;}
+
+  .menu{position:absolute; top:34px; right:-4px; width:180px; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.16); padding:6px; z-index:21; display:none;}
+  .menu.open{display:block;}
+  .menu button{display:block; width:100%; text-align:left; font-size:.85rem; padding:9px 10px; border-radius:7px; color:var(--ink);}
+  .menu button.danger{color:var(--danger-ink);}
+  .menu hr{border:none; border-top:1px solid var(--line); margin:4px 2px;}
+
+  .popover-layer{position:fixed; inset:0; background:rgba(20,22,20,.28); z-index:30; display:none;}
+  .popover-layer.open{display:block;}
+  .popover{position:absolute; top:56px; right:14px; width:264px; background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.18); padding:14px; z-index:31;}
+  .popover h4{font-size:.85rem; font-weight:700; margin-bottom:4px;}
+  .popover p{font-size:.75rem; color:var(--muted); line-height:1.5; margin-bottom:10px;}
+  .fs-row{display:flex; align-items:center; gap:8px; margin-bottom:2px;}
+  .fs-row span{font-weight:700; color:var(--muted); flex:none;}
+  .fs-row span.a{font-size:11px;}
+  .fs-row span.b{font-size:17px;}
+  .fs-row input[type="range"]{flex:1; accent-color:var(--accent); height:20px;}
+  .fs-steps{display:flex; justify-content:space-between; font-size:9.5px; color:var(--muted); padding:0 2px; margin-bottom:12px;}
+  .gbtn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:9px 0;
+    border-radius:9px; border:1px solid var(--line); background:var(--bg); font-size:.8rem; font-weight:600; color:var(--ink);}
+  .gbtn svg{width:13px; height:13px;}
+  .popover hr{border:none; border-top:1px solid var(--line); margin:12px 0;}
+  .backup-row{display:flex; gap:6px;}
+  .backup-row button{flex:1; font-size:.75rem; padding:7px 0; border-radius:8px; border:1px solid var(--line); color:var(--ink); font-weight:600;}
+  .synced{display:flex; align-items:center; gap:8px; margin-top:10px;}
+  .avatar{width:26px; height:26px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:.7rem;
+    font-weight:700; display:flex; align-items:center; justify-content:center; flex:none;}
+  .synced .meta{font-size:.75rem; color:var(--muted); line-height:1.4;}
+  .synced .meta b{color:var(--ink); font-weight:600; display:block; font-size:.8rem;}
+  .verinfo{display:flex; flex-direction:column; gap:3px; align-items:center; text-align:center;}
+  .verinfo .v1{font-size:.75rem; color:var(--muted); font-weight:600;}
+  .verinfo .v2{font-size:.68rem; color:var(--muted); opacity:.75;}
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+  <div class="app-header">
+    <div class="top-row">
+      <div class="title-date">
+        <span class="wordmark-live">TODAY'S <b>CHECK</b></span>
+        <span class="datetag" id="dateLabel"></span>
+      </div>
+      <div class="hbtns">
+        <button class="ibtn" id="themeBtn" aria-label="테마 전환">
+          <svg class="sun" viewBox="0 0 24 24"><path d="M12 4V2.5M12 21.5V20M4 12H2.5M21.5 12H20M5.6 5.6l-1-1M19.4 5.6l1-1M5.6 18.4l-1 1M19.4 18.4l1 1"/><circle cx="12" cy="12" r="4.2"/></svg>
+          <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+        </button>
+        <button class="ibtn" id="cloudBtn" aria-label="동기화 및 환경설정"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.6A3.5 3.5 0 0117.5 15v.2A3 3 0 0117 18H7z"/></svg></button>
+      </div>
+    </div>
+    <div class="seg" id="seg">
+      <button class="on" data-tab="all">전체</button>
+      <button data-tab="today">오늘</button>
+      <button data-tab="lists">리스트별</button>
+    </div>
+    <div class="tabs" id="tabs" style="display:none;">
+      <button class="on" data-list="업무">업무</button>
+      <button data-list="집안일">집안일</button>
+      <button data-list="여행">여행</button>
+      <button class="add" id="addListBtn">＋</button>
+    </div>
+  </div>
+
+  <!-- 전체 -->
+  <div class="panel on" data-panel="all">
+    <div class="cardwrap">
+      <div class="card">
+        <div class="ctrl-row">
+          <span class="tglchip"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.4"/></svg>완료 숨김</span>
+          <span class="tglchip on"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</span>
+        </div>
+        <div class="grouplabel">업무</div>
+        <div class="item">
+          <span class="star on" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">분기 보고서 초안 검토</div></div>
+          <span class="due today">오늘</span>
+        </div>
+        <div class="item">
+          <span class="star on" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">세금계산서 발행</div></div>
+          <span class="due overdue">8/6</span>
+        </div>
+        <div class="grouplabel">집안일</div>
+        <div class="item">
+          <span class="star" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">우유 사기</div></div>
+          <span class="due">8/9</span>
+        </div>
+        <div class="item done">
+          <span class="star" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk on" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">쓰레기 버리기</div></div>
+          <span class="listpill">집안일</span>
+        </div>
+      </div>
+    </div>
+    <div class="savebar">자동 저장됨 <span id="saveTime"></span></div>
+    <div class="footer">RESPOFLOV</div>
+  </div>
+
+  <!-- 오늘 -->
+  <div class="panel" data-panel="today">
+    <div class="cardwrap">
+      <div class="card">
+        <div class="gauge-row"><div class="gauge"><div style="width:40%"></div></div><span class="gauge-num">2/5</span></div>
+        <div class="ctrl-row">
+          <span class="tglchip on"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.2A10.8 10.8 0 0112 5c6.5 0 10 6 10 6a13.8 13.8 0 01-3 3.6M6.5 6.6C3.9 8.3 2 11 2 11s3.5 6 10 6c1.2 0 2.4-.2 3.4-.6M9.5 9.7a3 3 0 004.2 4"/></svg>완료 숨김</span>
+          <span class="tglchip"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</span>
+        </div>
+        <div class="grouplabel warn">기한 지남 · 2</div>
+        <div class="item">
+          <span class="star" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">여권 만료일 확인</div></div>
+          <span class="listpill">여행</span>
+          <span class="due overdue">8/5</span>
+        </div>
+        <div class="item">
+          <span class="star on" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">세금계산서 발행</div></div>
+          <span class="listpill">업무</span>
+          <span class="due overdue">8/6</span>
+        </div>
+        <div class="grouplabel now">오늘 · 1</div>
+        <div class="item">
+          <span class="star on" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">분기 보고서 초안 검토</div></div>
+          <span class="listpill">업무</span>
+          <span class="due today">오늘</span>
+        </div>
+      </div>
+    </div>
+    <div class="savebar">자동 저장됨 <span id="saveTime2"></span></div>
+    <div class="footer">RESPOFLOV</div>
+  </div>
+
+  <!-- 리스트별 -->
+  <div class="panel" data-panel="lists">
+    <div class="cardwrap attached">
+      <div class="card">
+        <div class="cardhead">
+          <span class="cardtitle">업무</span>
+          <button class="morebtn" id="moreBtn"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+          <div class="menu" id="menu">
+            <button>리스트 이름 변경</button>
+            <button>전체 해제</button>
+            <hr>
+            <button class="danger">완료 항목 삭제</button>
+            <button class="danger">리스트 삭제</button>
+          </div>
+        </div>
+        <div class="gauge-row"><div class="gauge"><div style="width:33%"></div></div><span class="gauge-num">1/3</span></div>
+        <div class="addrow">
+          <span class="star" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <input placeholder="할 일을 입력하고 Enter">
+          <span class="datepill">날짜</span>
+          <span class="addbtn">＋</span>
+        </div>
+        <div class="item">
+          <span class="star" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap">
+            <div class="txt">회의 자료 준비</div>
+            <div class="subrow open" onclick="toggleSub(this)"><svg viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>하위 1/3</div>
+            <div class="sub-list open">
+              <div class="sub-item done"><span class="chk on" onclick="toggleSubChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>지난 회의록 정리</div>
+              <div class="sub-item"><span class="chk" onclick="toggleSubChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>발표 슬라이드 초안</div>
+              <div class="sub-item"><span class="chk" onclick="toggleSubChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>참석자 확정</div>
+              <div class="subadd"><span class="plus">＋</span>하위 항목 추가</div>
+            </div>
+          </div>
+          <span class="due">8/9</span>
+        </div>
+        <div class="item">
+          <span class="star on" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">분기 보고서 초안 검토</div></div>
+          <span class="due today">오늘</span>
+        </div>
+        <div class="item">
+          <span class="star" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+          <span class="chk" onclick="toggleChk(this)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+          <div class="txtwrap"><div class="txt">세금계산서 발행</div></div>
+          <span class="due overdue">8/6</span>
+        </div>
+      </div>
+    </div>
+    <div class="savebar">자동 저장됨 <span id="saveTime3"></span></div>
+    <div class="footer">RESPOFLOV</div>
+  </div>
+</div>
+
+<div class="popover-layer" id="popoverLayer" onclick="if(event.target===this) closePopover()">
+  <div class="popover">
+    <h4>글자 크기</h4>
+    <p>본문 글자 크기를 조절해요. 목록·배지·버튼 글자에 함께 적용됩니다.</p>
+    <div class="fs-row"><span class="a">가</span><input type="range" id="fsSlider" min="0" max="4" step="1" value="2"><span class="b">가</span></div>
+    <div class="fs-steps"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+    <hr>
+    <h4>동기화 꺼짐</h4>
+    <p>Google 계정으로 로그인하면 휴대폰·데스크탑에서 같은 리스트를 볼 수 있어요.</p>
+    <button class="gbtn"><svg viewBox="0 0 24 24"><path d="M21 12.2c0-.7-.06-1.4-.18-2H12v3.8h5c-.2 1.2-.9 2.2-1.9 2.9v2.4h3.1c1.8-1.7 2.8-4.1 2.8-7.1z" fill="#4285F4"/><path d="M12 21c2.6 0 4.7-.9 6.2-2.4l-3.1-2.4c-.9.6-2 .9-3.1.9-2.4 0-4.4-1.6-5.1-3.7H3.7v2.5C5.2 18.9 8.3 21 12 21z" fill="#34A853"/><path d="M6.9 13.4c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7.1H3.7C3 8.5 2.7 10.2 2.7 12s.3 3.5 1 4.9l3.2-2.5z" fill="#FBBC05"/><path d="M12 6.6c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.7 3.6 14.6 2.8 12 2.8 8.3 2.8 5.2 4.9 3.7 8.1l3.2 2.5c.7-2.1 2.7-3.7 5.1-4z" fill="#EA4335"/></svg>Google로 동기화 시작</button>
+    <hr>
+    <h4>로컬 백업</h4>
+    <p>동기화와 별개로, 기기에 JSON 파일로 저장하거나 불러올 수 있어요.</p>
+    <div class="backup-row"><button>내보내기</button><button>가져오기</button></div>
+    <hr>
+    <div class="verinfo">
+      <span class="v1">TODAY'S CHECK · v1.0.0</span>
+      <span class="v2">Firebase SDK 사용 (Apache License 2.0)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var days = ["일","월","화","수","목","금","토"];
+  var d = new Date();
+  document.getElementById("dateLabel").textContent = (d.getMonth()+1)+"."+d.getDate()+" "+days[d.getDay()];
+  var t = (d.getHours()<10?"0":"")+d.getHours()+":"+(d.getMinutes()<10?"0":"")+d.getMinutes();
+  ["saveTime","saveTime2","saveTime3"].forEach(function(id){ document.getElementById(id).textContent = t; });
+
+  document.getElementById("seg").addEventListener("click", function(ev){
+    var btn = ev.target.closest("button"); if(!btn) return;
+    document.querySelectorAll("#seg button").forEach(function(b){ b.classList.toggle("on", b===btn); });
+    document.querySelectorAll(".panel").forEach(function(p){ p.classList.toggle("on", p.dataset.panel===btn.dataset.tab); });
+    document.getElementById("tabs").style.display = (btn.dataset.tab === "lists") ? "flex" : "none";
+  });
+
+  window.toggleChk = function(el){
+    el.classList.toggle("on");
+    var item = el.closest(".item");
+    if(item) item.classList.toggle("done", el.classList.contains("on"));
+  };
+  window.toggleSubChk = function(el){ el.classList.toggle("on"); };
+  window.toggleSub = function(el){
+    el.classList.toggle("open");
+    var list = el.nextElementSibling;
+    if(list) list.classList.toggle("open");
+  };
+
+  document.getElementById("themeBtn").addEventListener("click", function(){
+    var b = document.body;
+    b.setAttribute("data-theme", b.getAttribute("data-theme")==="dark" ? "light" : "dark");
+  });
+
+  var moreBtn = document.getElementById("moreBtn"), menu = document.getElementById("menu");
+  moreBtn.addEventListener("click", function(ev){ ev.stopPropagation(); menu.classList.toggle("open"); });
+  document.addEventListener("click", function(){ menu.classList.remove("open"); });
+
+  var cloudBtn = document.getElementById("cloudBtn"), layer = document.getElementById("popoverLayer");
+  cloudBtn.addEventListener("click", function(ev){ ev.stopPropagation(); layer.classList.add("open"); });
+  window.closePopover = function(){ layer.classList.remove("open"); };
+
+  var steps = [13,14,15,16,17];
+  document.getElementById("fsSlider").addEventListener("input", function(ev){
+    document.documentElement.style.fontSize = steps[+ev.target.value] + "px";
+  });
+
+  document.getElementById("addListBtn").addEventListener("click", function(){
+    var btn = this;
+    var inp = document.createElement("span");
+    inp.className = "tab-input";
+    inp.innerHTML = '<input style="width:100%;border:none;background:transparent;font-size:inherit;color:inherit;outline:none" placeholder="새 리스트 이름">';
+    btn.replaceWith(inp);
+    var field = inp.querySelector("input"); field.focus();
+    function done(){
+      var v = field.value.trim();
+      if(v){
+        var t = document.createElement("button"); t.textContent = v; t.dataset.list = v;
+        inp.replaceWith(t, btn);
+      } else {
+        inp.replaceWith(btn);
+      }
+    }
+    field.addEventListener("keydown", function(ev){ if(ev.key==="Enter") done(); if(ev.key==="Escape") inp.replaceWith(btn); });
+    field.addEventListener("blur", done);
+  });
+})();
+</script>
+</body>
+</html>

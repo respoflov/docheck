@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CHECK-CHECK</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4D6152">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CHECK-CHECK">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light">
+
+<div class="app" id="app">
+  <div class="app-header">
+    <div class="top-row">
+      <div class="title-date">
+        <span class="wordmark-live">CHECK-<b>CHECK</b></span>
+        <span class="datetag" id="dateLabel"></span>
+      </div>
+      <div class="hbtns">
+        <button class="ibtn" id="themeBtn" aria-label="테마 전환">
+          <svg class="sun" viewBox="0 0 24 24"><path d="M12 4V2.5M12 21.5V20M4 12H2.5M21.5 12H20M5.6 5.6l-1-1M19.4 5.6l1-1M5.6 18.4l-1 1M19.4 18.4l1 1"/><circle cx="12" cy="12" r="4.2"/></svg>
+          <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+        </button>
+        <button class="ibtn" id="cloudBtn" aria-label="동기화 및 환경설정"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.6A3.5 3.5 0 0117.5 15v.2A3 3 0 0117 18H7z"/></svg></button>
+      </div>
+    </div>
+    <div class="seg" id="seg">
+      <button class="on" data-tab="today">오늘</button>
+      <button data-tab="all">전체</button>
+      <button data-tab="lists">리스트별</button>
+    </div>
+    <div class="tabs" id="tabs" style="display:none;"></div>
+  </div>
+
+  <div class="panels-viewport" id="panelsViewport">
+    <div class="panels-track" id="panelsTrack">
+
+      <!-- 오늘 -->
+      <div class="panel" data-panel="today">
+        <div class="cardwrap">
+          <div class="card">
+            <div class="gauge-row"><div class="gauge"><div id="todayGaugeFill" style="width:0%"></div></div><span class="gauge-num" id="todayGaugeNum">0/0</span></div>
+            <div class="ctrl-row">
+              <button class="tglchip" id="hideDoneBtnToday"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.4"/></svg>완료 숨김</button>
+              <button class="tglchip" id="importantBtnToday"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</button>
+            </div>
+            <div class="addrow">
+              <span class="star" id="todayItemStar"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+              <input id="todayItemText" placeholder="오늘 할 일을 입력하고 Enter" autocomplete="off">
+              <span class="addbtn" id="todayAddItemBtn">＋</span>
+            </div>
+            <div class="addhint" id="todayAddHint"></div>
+            <div id="todayList"></div>
+          </div>
+        </div>
+        <div class="savebar" id="saveBarToday"></div>
+        <div class="footer">RESPOFLOV</div>
+      </div>
+
+      <!-- 전체 -->
+      <div class="panel" data-panel="all">
+        <div class="cardwrap">
+          <div class="card">
+            <div class="ctrl-row">
+              <button class="tglchip" id="hideDoneBtnAll"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.4"/></svg>완료 숨김</button>
+              <button class="tglchip" id="importantBtnAll"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</button>
+            </div>
+            <div id="allList"></div>
+          </div>
+        </div>
+        <div class="savebar" id="saveBarAll"></div>
+        <div class="footer">RESPOFLOV</div>
+      </div>
+
+      <!-- 리스트별 -->
+      <div class="panel" data-panel="lists">
+        <div class="cardwrap attached">
+          <div class="card">
+            <div class="cardhead">
+              <span class="cardtitle" id="listTitle"></span>
+              <button class="morebtn" id="moreBtn"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+              <div class="menu" id="menu">
+                <button id="menuRename">리스트 이름 변경</button>
+                <button id="menuUncheckAll">전체 해제</button>
+                <hr>
+                <button class="danger" id="menuClearDone">완료 항목 삭제</button>
+                <button class="danger" id="menuDeleteList">리스트 삭제</button>
+              </div>
+            </div>
+            <div class="gauge-row"><div class="gauge"><div id="listGaugeFill" style="width:0%"></div></div><span class="gauge-num" id="listGaugeNum">0/0</span></div>
+            <div class="ctrl-row">
+              <button class="tglchip" id="hideDoneBtnList"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.4"/></svg>완료 숨김</button>
+              <button class="tglchip" id="importantBtnList"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg>중요만</button>
+            </div>
+            <div class="addrow">
+              <span class="star" id="newItemStar"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z"/></svg></span>
+              <input id="newItemText" placeholder="할 일을 입력하고 Enter" autocomplete="off">
+              <span class="due" id="newItemDueBadge">날짜</span>
+              <span class="addbtn" id="addItemBtn">＋</span>
+            </div>
+            <div id="listItems"></div>
+          </div>
+        </div>
+        <div class="savebar" id="saveBarList"></div>
+        <div class="footer">RESPOFLOV</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="snackbar" id="snackbar">
+  <span id="snackbarText"></span>
+  <button id="snackbarUndo">실행 취소</button>
+</div>
+
+<div class="popover-layer" id="popoverLayer">
+  <div class="popover">
+    <h4>글자 크기</h4>
+    <p>본문 글자 크기를 조절해요. 목록·배지·버튼 글자에 함께 적용됩니다.</p>
+    <div class="fs-row"><span class="a">가</span><input type="range" id="fsSlider" min="0" max="4" step="1" value="2"><span class="b">가</span></div>
+    <div class="fs-steps"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+    <hr>
+    <h4 id="syncTitle">동기화 꺼짐</h4>
+    <p id="syncDesc">Google 계정으로 로그인하면 휴대폰·데스크탑에서 같은 리스트를 볼 수 있어요.</p>
+    <button class="gbtn" id="googleSyncBtn"><svg viewBox="0 0 24 24"><path d="M21 12.2c0-.7-.06-1.4-.18-2H12v3.8h5c-.2 1.2-.9 2.2-1.9 2.9v2.4h3.1c1.8-1.7 2.8-4.1 2.8-7.1z" fill="#4285F4"/><path d="M12 21c2.6 0 4.7-.9 6.2-2.4l-3.1-2.4c-.9.6-2 .9-3.1.9-2.4 0-4.4-1.6-5.1-3.7H3.7v2.5C5.2 18.9 8.3 21 12 21z" fill="#34A853"/><path d="M6.9 13.4c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7.1H3.7C3 8.5 2.7 10.2 2.7 12s.3 3.5 1 4.9l3.2-2.5z" fill="#FBBC05"/><path d="M12 6.6c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.7 3.6 14.6 2.8 12 2.8 8.3 2.8 5.2 4.9 3.7 8.1l3.2 2.5c.7-2.1 2.7-3.7 5.1-4z" fill="#EA4335"/></svg><span id="googleSyncBtnLabel">Google로 동기화 시작</span></button>
+    <div class="synced" id="syncedInfo" hidden>
+      <span class="avatar" id="syncAvatar"></span>
+      <span class="meta"><b id="syncEmail"></b><span id="syncStatus"></span></span>
+    </div>
+    <hr>
+    <h4>로컬 백업</h4>
+    <p>동기화와 별개로, 기기에 JSON 파일로 저장하거나 불러올 수 있어요.</p>
+    <div class="backup-row">
+      <button id="exportBtn">내보내기</button>
+      <button id="importBtn">가져오기</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+    <hr>
+    <div class="verinfo">
+      <span class="v1">CHECK-CHECK · v<span id="appVersion"></span></span>
+      <span class="v2">Firebase SDK 사용 (Apache License 2.0)</span>
+    </div>
+  </div>
+</div>
+
+<div class="datepop" id="datePop">
+  <input type="date" id="datePopInput">
+  <button id="datePopApply">적용</button>
+  <button id="datePopClear">제거</button>
+</div>
+
+<script type="module" src="app.js"></script>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("./sw.js");
+  });
+}
+</script>
+</body>
+</html>
