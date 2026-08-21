@@ -3,7 +3,7 @@ import { isConfigured as firebaseConfigured, signIn, signOutUser, watchAuth, pul
 (function(){
 "use strict";
 
-var APP_VERSION = "1.1.0";
+var APP_VERSION = "1.1.1";
 var STORAGE_KEY = "docheck-v1";
 var CHECK_PATH = "M5 12.5l4.5 4.5L19 7";
 var STAR_PATH = "M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z";
