@@ -1,22 +1,29 @@
+// Docheck 앱 로직 전체. 상태 저장, 세 화면(오늘·리스트별·전체) 그리기, 스와이프·팝오버·동기화를 담당한다
 import { isConfigured as firebaseConfigured, signIn, signOutUser, watchAuth, pullRemoteState, pushState, watchRemoteState } from "./firebase-sync.js";
 
 (function(){
 "use strict";
 
+// 화면(클라우드 팝오버)에 표시하는 앱 버전
 var APP_VERSION = "1.1.1";
+// localStorage 저장 키
 var STORAGE_KEY = "docheck-v1";
+// 체크 표시와 별 아이콘의 SVG 경로
 var CHECK_PATH = "M5 12.5l4.5 4.5L19 7";
 var STAR_PATH = "M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.5L12 16.9l-4.94 2.6.94-5.5-4-3.9 5.53-.8L12 3.5z";
+// 글자 크기 슬라이더 5단계에 대응하는 기본 글자 크기(px)
 var FS_STEPS = [13,14,15,16,17];
 
 document.getElementById("appVersion").textContent = APP_VERSION;
 
 /* ---------- 저장소 ---------- */
 var memoryStore = null, storageOK = true;
+// 저장된 원본 문자열을 읽는다. localStorage를 못 쓰면 메모리 값을 쓴다
 function loadRaw(){
   try { return localStorage.getItem(STORAGE_KEY); }
   catch(e){ storageOK = false; return memoryStore; }
 }
+// 문자열을 저장한다. 실패하면 메모리에 보관하고 저장 불가로 표시한다
 function saveRaw(str){
   try { localStorage.setItem(STORAGE_KEY, str); storageOK = true; }
   catch(e){ storageOK = false; memoryStore = str; }
@@ -24,6 +31,7 @@ function saveRaw(str){
 
 /* ---------- 상태 ---------- */
 var state = null;
+// 처음 실행할 때의 기본 상태
 function defaultState(){
   return {
     theme: "auto",
@@ -34,6 +42,7 @@ function defaultState(){
     lists: [{ id:"l1", name:"할 일", items:[] }]
   };
 }
+// 저장된 상태를 불러와 기본값 위에 덮어쓴다. 깨져 있으면 기본 상태로 시작한다
 function load(){
   var raw = loadRaw();
   if(!raw){ state = defaultState(); return; }
@@ -43,6 +52,7 @@ function load(){
     state = Object.assign(defaultState(), s);
   } catch(e){ state = defaultState(); }
 }
+// 상태를 저장하고 "자동 저장됨" 표시를 갱신한다. 로그인 중이면 클라우드 업로드도 예약한다
 function save(){
   saveRaw(JSON.stringify(state));
   var t = new Date();
@@ -52,12 +62,17 @@ function save(){
   bar.className = "savebar" + (storageOK ? "" : " warn");
   if(cloudUid) schedulePush();
 }
+// 상태를 바꾼 뒤 부르는 공통 함수: 저장하고 모든 화면을 다시 그린다
 function commit(){ save(); renderAll(); }
 
 /* ---------- 유틸 ---------- */
+// 항목·리스트에 붙일 고유 id를 만든다
 function uid(){ return "i" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+// 한 자리 숫자 앞에 0을 붙인다
 function two(n){ return (n<10?"0":"")+n; }
+// 오늘 날짜를 "YYYY-MM-DD"로 돌려준다
 function todayStr(){ var d = new Date(); return d.getFullYear()+"-"+two(d.getMonth()+1)+"-"+two(d.getDate()); }
+// 마감일 상태에 따른 CSS 클래스 (지남·오늘)
 function dueClass(due, done){
   if(!due || done) return "";
   var t = todayStr();
@@ -65,18 +80,21 @@ function dueClass(due, done){
   if(due === t) return "today";
   return "";
 }
+// 마감일 배지에 보일 글자 ("오늘" 또는 "M/D")
 function dueLabel(due){
   var t = todayStr();
   if(due === t) return "오늘";
   var p = due.split("-");
   return p[1] + "/" + p[2];
 }
+// DOM 요소를 만드는 줄임 함수
 function el(tag, cls, text){
   var e = document.createElement(tag);
   if(cls) e.className = cls;
   if(text != null) e.textContent = text;
   return e;
 }
+// path 하나짜리 24×24 SVG 아이콘을 만든다
 function svgIcon(path, extraAttrs){
   var s = document.createElementNS("http://www.w3.org/2000/svg","svg");
   s.setAttribute("viewBox","0 0 24 24");
@@ -85,11 +103,13 @@ function svgIcon(path, extraAttrs){
   s.appendChild(p);
   return s;
 }
+// 현재 선택된 리스트를 찾는다. 없으면 첫 리스트를 선택한다
 function activeList(){
   for(var i=0;i<state.lists.length;i++) if(state.lists[i].id===state.activeListId) return state.lists[i];
   state.activeListId = state.lists[0].id;
   return state.lists[0];
 }
+// 항목 id로 항목과 그 항목이 속한 리스트를 찾는다
 function findItem(itemId){
   for(var i=0;i<state.lists.length;i++){
     var list = state.lists[i];
@@ -99,6 +119,7 @@ function findItem(itemId){
 }
 
 /* ---------- 정렬/필터 ---------- */
+// 「완료 숨김」·「중요만」 필터를 적용한 항목만 남긴다
 function visible(items){
   return items.filter(function(it){
     if(state.hideCompleted && it.done) return false;
@@ -106,6 +127,7 @@ function visible(items){
     return true;
   });
 }
+// 정렬 규칙: 미완료가 위, 그다음 마감일이 빠른 순, 마감일 없는 항목은 아래
 function sorted(items){
   return items.slice().sort(function(a,b){
     if(a.done !== b.done) return a.done ? 1 : -1;
@@ -118,6 +140,7 @@ function sorted(items){
 }
 
 /* ---------- 아이템 로우 빌드 (전체/오늘/리스트별 공용) ---------- */
+// 항목 한 줄(체크·별·글자·마감일·서브태스크·메모·삭제 배경)을 만든다. 세 화면이 함께 쓴다
 function buildItemRow(item, list, opts){
   opts = opts || {};
   var row = el("div","item-row");
@@ -234,6 +257,7 @@ function buildItemRow(item, list, opts){
 }
 
 /* ---------- 텍스트/메모/서브텍스트 편집 ---------- */
+// 항목 글자를 탭하면 입력창으로 바꿔 수정하게 한다
 function startEditText(txtEl, item){
   var inp = el("input","edit-input");
   inp.value = item.text;
@@ -250,6 +274,7 @@ function startEditText(txtEl, item){
   inp.addEventListener("blur", function(){ done(true); });
   inp.addEventListener("click", function(ev){ ev.stopPropagation(); });
 }
+// 메모를 탭하면 여러 줄 입력창으로 바꿔 수정하게 한다
 function startEditMemo(memoEl, item){
   var inp = el("input","memo-input");
   inp.placeholder = "메모";
@@ -267,6 +292,7 @@ function startEditMemo(memoEl, item){
   inp.addEventListener("blur", function(){ done(true); });
   inp.addEventListener("click", function(ev){ ev.stopPropagation(); });
 }
+// 서브태스크 글자를 수정하는 입력창으로 바꾼다
 function startEditSubtext(txtEl, st){
   var inp = el("input","edit-input");
   inp.value = st.text;
@@ -286,6 +312,7 @@ function startEditSubtext(txtEl, st){
 
 /* ---------- 스와이프 삭제 ---------- */
 var swipeState = null;
+// 항목을 왼쪽으로 밀어 삭제하는 제스처를 연결한다. 세로 스크롤과 구분하려고 처음 8px 이동 방향으로 판단한다
 function wireSwipeDelete(li, delBg, item, list){
   li.addEventListener("pointerdown", function(ev){
     if(ev.target.closest(".star,.chk,.due,.subrow,.sub-list,.edit-input,.memo,.memo-input")) return;
@@ -328,6 +355,7 @@ function wireSwipeDelete(li, delBg, item, list){
 
 /* ---------- 삭제 + 실행취소 ---------- */
 var undoTimer = null, lastDeleted = null;
+// 항목을 지우고 4초 동안 실행 취소할 수 있는 스낵바를 띄운다
 function deleteItemWithUndo(item, list){
   var idx = list.items.indexOf(item);
   if(idx === -1) return;
@@ -342,6 +370,7 @@ function deleteItemWithUndo(item, list){
     }
   });
 }
+// 화면 아래 스낵바를 띄우고 4초 뒤 자동으로 숨긴다
 function showSnackbar(text, onUndo){
   var bar = document.getElementById("snackbar");
   document.getElementById("snackbarText").textContent = text;
@@ -352,9 +381,11 @@ function showSnackbar(text, onUndo){
   undoBtn.onclick = handler;
   undoTimer = setTimeout(hideSnackbar, 4000);
 }
+// 스낵바를 숨기고 실행 취소 타이머를 멈춘다
 function hideSnackbar(){ document.getElementById("snackbar").classList.remove("show"); clearTimeout(undoTimer); }
 
 /* ---------- 날짜 팝오버 (기존 항목·새 항목 입력창 공용) ---------- */
+// 기준 요소 아래에 날짜 선택 팝오버를 연다. 적용·지우기 결과는 setValue로 돌려준다
 function openDatePop(anchor, getValue, setValue){
   var pop = document.getElementById("datePop");
   var input = document.getElementById("datePopInput");
@@ -370,9 +401,11 @@ function openDatePop(anchor, getValue, setValue){
   document.getElementById("datePopClear").onclick = function(){ apply(null); };
   input.onkeydown = function(ev){ if(ev.key==="Enter") apply(input.value); };
 }
+// 기존 항목의 마감일을 바꾸는 날짜 팝오버를 연다
 function openItemDatePop(anchor, item){
   openDatePop(anchor, function(){ return item.due; }, function(v){ item.due = v; commit(); });
 }
+// 팝오버 바깥을 누르면 날짜 팝오버를 닫는다
 document.addEventListener("click", function(ev){
   var pop = document.getElementById("datePop");
   if(pop.classList.contains("open") && !ev.target.closest("#datePop") && !ev.target.closest(".due")){
@@ -381,6 +414,7 @@ document.addEventListener("click", function(ev){
 });
 
 /* ---------- 빈 상태(체크박스 아이콘 + 제목 + 설명) ---------- */
+// 항목이 없을 때 보여 줄 빈 상태 화면(아이콘·제목·설명)을 만든다
 function buildEmpty(title, subtitle){
   var svgNS = "http://www.w3.org/2000/svg";
   var em = el("div","empty");
@@ -401,6 +435,7 @@ function buildEmpty(title, subtitle){
 }
 
 /* ---------- 렌더: 전체 ---------- */
+// 「전체」 화면: 모든 리스트의 항목을 리스트별로 묶어 그린다
 function renderAllTab(){
   var host = document.getElementById("allList");
   host.innerHTML = "";
@@ -421,6 +456,7 @@ function renderAllTab(){
 }
 
 /* ---------- 렌더: 오늘 ---------- */
+// 「오늘」 화면: 오늘 마감과 기한이 지난 항목만 모으고 완료도 게이지를 그린다
 function renderTodayTab(){
   var host = document.getElementById("todayList");
   host.innerHTML = "";
@@ -462,6 +498,7 @@ function renderTodayTab(){
 }
 
 /* ---------- 렌더: 리스트별 ---------- */
+// 「리스트별」 화면: 인덱스 탭으로 고른 리스트 하나의 항목을 그린다
 function renderListsTab(){
   var list = activeList();
   document.getElementById("listTitle").textContent = list.name;
@@ -496,6 +533,7 @@ function renderListsTab(){
   document.getElementById("importantBtnList").classList.toggle("on", state.importantOnly);
 }
 
+// 인덱스 탭 끝에 새 리스트 이름 입력창을 연다
 function startNewListInput(){
   var tabsHost = document.getElementById("tabs");
   var addBtn = tabsHost.querySelector(".add");
@@ -521,6 +559,7 @@ function startNewListInput(){
 }
 
 /* ---------- 전체 렌더 ---------- */
+// 세 화면을 모두 다시 그린다
 function renderAll(){
   renderAllTab();
   renderTodayTab();
@@ -528,6 +567,7 @@ function renderAll(){
 }
 
 /* ---------- 상단바 ---------- */
+// 상단 날짜 표시를 갱신한다
 function renderHeader(){
   var d = new Date();
   var days = ["일","월","화","수","목","금","토"];
@@ -535,6 +575,7 @@ function renderHeader(){
 }
 
 /* ---------- 테마 ---------- */
+// 저장된 테마를 적용한다. auto면 기기의 라이트·다크 설정을 따른다
 function applyTheme(){
   var mode = state.theme;
   if(mode === "auto"){
@@ -549,10 +590,12 @@ document.getElementById("themeBtn").addEventListener("click", function(){
 });
 
 /* ---------- 세그먼트 탭 (스와이프로도 전환되는 캐러셀) ---------- */
+// 세그먼트 탭 순서 (화면 캐러셀의 패널 순서와 같다)
 var PANEL_ORDER = ["today","lists","all"];
 var panelIndex = 0;
 var track = document.getElementById("panelsTrack");
 var viewport = document.getElementById("panelsViewport");
+// idx번째 화면으로 캐러셀을 옮기고 세그먼트 버튼 선택을 맞춘다
 function goToPanel(idx, animate){
   idx = Math.max(0, Math.min(PANEL_ORDER.length - 1, idx));
   panelIndex = idx;
@@ -597,6 +640,7 @@ viewport.addEventListener("pointermove", function(ev){
   track.style.transition = "none";
   track.style.transform = "translateX(" + pct + "%)";
 });
+// 화면 스와이프를 끝낸다. 화면 폭의 18%를 넘게 밀었으면 옆 화면으로 넘긴다
 function panelSwipeEnd(ev){
   if(!panelSwipe || panelSwipe.id !== ev.pointerId) return;
   var s = panelSwipe; panelSwipe = null;
@@ -628,6 +672,7 @@ document.getElementById("newItemStar").addEventListener("click", function(){
   newItemImportant = !newItemImportant;
   this.classList.toggle("on", newItemImportant);
 });
+// 새 항목 입력창 옆의 마감일 배지를 현재 선택값으로 갱신한다
 function renderNewItemDueBadge(){
   var badge = document.getElementById("newItemDueBadge");
   if(newItemDueValue){
@@ -642,6 +687,7 @@ document.getElementById("newItemDueBadge").addEventListener("click", function(ev
   ev.stopPropagation();
   openDatePop(this, function(){ return newItemDueValue; }, function(v){ newItemDueValue = v; renderNewItemDueBadge(); });
 });
+// 「리스트별」 입력창의 글자로 현재 리스트에 새 항목을 추가한다
 function addItem(){
   var t = document.getElementById("newItemText");
   var v = t.value.trim();
@@ -664,6 +710,7 @@ document.getElementById("todayItemStar").addEventListener("click", function(){
   todayItemImportant = !todayItemImportant;
   this.classList.toggle("on", todayItemImportant);
 });
+// 「오늘」 입력창의 글자로 마감일이 오늘인 새 항목을 추가한다
 function addTodayItem(){
   var t = document.getElementById("todayItemText");
   var v = t.value.trim();
@@ -679,6 +726,7 @@ document.getElementById("todayAddItemBtn").addEventListener("click", addTodayIte
 document.getElementById("todayItemText").addEventListener("keydown", function(ev){ if(ev.key==="Enter") addTodayItem(); });
 
 document.getElementById("listTitle").addEventListener("click", function(){ renameListPrompt(); });
+// 리스트 제목을 입력창으로 바꿔 이름을 고치게 한다
 function renameListPrompt(){
   var span = document.getElementById("listTitle");
   var list = activeList();
@@ -699,6 +747,7 @@ function renameListPrompt(){
 }
 
 /* ---------- 오버플로 메뉴 ---------- */
+// ⋯ 메뉴: 이름 변경·전체 해제·완료 항목 삭제·리스트 삭제
 var moreBtn = document.getElementById("moreBtn"), menu = document.getElementById("menu");
 moreBtn.addEventListener("click", function(ev){
   ev.stopPropagation();
@@ -731,6 +780,7 @@ document.getElementById("menuDeleteList").addEventListener("click", function(){
 });
 
 /* ---------- 글자 크기 ---------- */
+// 글자 크기 슬라이더를 움직이면 바로 적용하고 저장한다
 document.getElementById("fsSlider").addEventListener("input", function(ev){
   state.fontStep = +ev.target.value;
   document.documentElement.style.fontSize = FS_STEPS[state.fontStep] + "px";
@@ -738,11 +788,13 @@ document.getElementById("fsSlider").addEventListener("input", function(ev){
 });
 
 /* ---------- 클라우드 팝오버 ---------- */
+// 클라우드 버튼을 누르면 설정 팝오버(글자 크기·동기화·백업·버전)를 연다
 var cloudBtn = document.getElementById("cloudBtn"), popLayer = document.getElementById("popoverLayer");
 cloudBtn.addEventListener("click", function(ev){ ev.stopPropagation(); popLayer.classList.add("open"); });
 popLayer.addEventListener("click", function(ev){ if(ev.target === popLayer) popLayer.classList.remove("open"); });
 
 /* ---------- 로컬 백업 ---------- */
+// 로컬 백업: 전체 상태를 JSON 파일로 내보내거나 불러온다
 document.getElementById("exportBtn").addEventListener("click", function(){
   var blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
   var a = document.createElement("a");
@@ -772,16 +824,19 @@ document.getElementById("importFile").addEventListener("change", function(ev){
 
 /* ---------- Firebase 동기화 ---------- */
 var cloudUid = null, pushTimer = null, unsubRemote = null;
+// 변경 후 1.2초 동안 추가 변경이 없으면 클라우드에 한 번만 올린다
 function schedulePush(){
   clearTimeout(pushTimer);
   pushTimer = setTimeout(function(){ pushState(cloudUid, state); }, 1200);
 }
+// 로그아웃 상태의 동기화 안내 화면으로 바꾼다
 function setSyncUiSignedOut(){
   document.getElementById("syncTitle").textContent = "동기화 꺼짐";
   document.getElementById("syncDesc").textContent = "Google 계정으로 로그인하면 휴대폰·데스크탑에서 같은 리스트를 볼 수 있어요.";
   document.getElementById("googleSyncBtn").hidden = false;
   document.getElementById("syncedInfo").hidden = true;
 }
+// 로그인한 계정 정보로 동기화 안내 화면을 바꾼다
 function setSyncUiSignedIn(user){
   document.getElementById("syncTitle").textContent = "동기화 켜짐";
   document.getElementById("syncDesc").textContent = "이 기기에서 바뀐 내용이 자동으로 저장돼요.";
@@ -842,6 +897,7 @@ if(firebaseConfigured){
    "오늘" 탭의 기한 지남/오늘 분류·게이지가 그 순간 자동으로 다시 계산된다.
    재렌더 없이는 날짜가 바뀌어도 화면이 그대로 멈춰 있기 때문에 필요하다. */
 var lastKnownDate = null;
+// 날짜가 바뀌었으면 화면을 다시 그린다 (기한 지난 항목이 「오늘」에서 「기한 지남」으로 옮겨 간다)
 function checkDateRollover(){
   var t = todayStr();
   if(lastKnownDate !== null && t !== lastKnownDate){
@@ -850,6 +906,7 @@ function checkDateRollover(){
   }
   lastKnownDate = t;
 }
+// 다음 자정에 날짜 확인이 실행되도록 예약한다
 function scheduleMidnightTick(){
   var now = new Date();
   var next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 3);

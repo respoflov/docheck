@@ -1,3 +1,4 @@
+/* Docheck 스타일. 라이트는 종이 장부와 세이지그린, 다크는 흑연 톤 무채색으로 나눠 설계했다 */
 *{box-sizing:border-box; margin:0; padding:0;}
 [hidden]{display:none !important;}
 html{font-size:15px; transition:font-size .15s ease;}
